@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Eloquentfilter by Tucker-Eric</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Eloquentfilter</h1>
+        <h2>Eloquently Filter Your Laravel Models</h2>
+        <a href="https://github.com/Tucker-Eric/EloquentFilter" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="eloquent-filter" class="anchor" href="#eloquent-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Eloquent Filter</h1>
+
+<p>An Eloquent way to filter Eloquent Models</p>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>Lets say we want to return a list of users filtered by multiple parameters. When we navigate to:</p>
+
+<p><code>/users?name=er&amp;last_name=&amp;company_id=2&amp;roles[]=1&amp;roles[]=4&amp;roles[]=7&amp;industry=5</code></p>
+
+<p><code>$request-&gt;all()</code> will return:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">[</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>       <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>er<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>  <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>2<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>      <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>1<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>4<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>7<span class="pl-pds">'</span></span>],</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>   <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span></span>
+<span class="pl-s1">]</span></pre></div>
+
+<p>To filter by all those parameters we would need to do something like:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App\Http\Controllers</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Http\Request</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\Http\Requests</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\User</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$query</span> <span class="pl-k">=</span> <span class="pl-c1">User</span><span class="pl-k">::</span>where(<span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>));</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">if</span> (<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>has(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>))</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>) <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>);</span>
+<span class="pl-s1">        }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">if</span> (<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>has(<span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>))</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>where(<span class="pl-k">function</span> (<span class="pl-smi">$q</span>) <span class="pl-k">use</span> (<span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">            {</span>
+<span class="pl-s1">                <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>first_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>) <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>)</span>
+<span class="pl-s1">                    <span class="pl-k">-&gt;</span>orWhere(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>) <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>);</span>
+<span class="pl-s1">            });</span>
+<span class="pl-s1">        }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>whereHas(<span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">$q</span>) <span class="pl-k">use</span> (<span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>whereIn(<span class="pl-s"><span class="pl-pds">'</span>id<span class="pl-pds">'</span></span>, <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>));</span>
+<span class="pl-s1">        })</span>
+<span class="pl-s1">            <span class="pl-k">-&gt;</span>whereHas(<span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">$q</span>) <span class="pl-k">use</span> (<span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">            {</span>
+<span class="pl-s1">                <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>whereHas(<span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>input(<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>));</span>
+<span class="pl-s1">            });</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>get();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>To filter that same input With Eloquent Filters:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App\Http\Controllers</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Http\Request</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\Http\Requests</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\User</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all())<span class="pl-k">-&gt;</span>get();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">}</span></pre></div>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
+
+<h3>
+<a id="install-through-composer" class="anchor" href="#install-through-composer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install Through Composer</h3>
+
+<pre><code>composer require tucker-eric/eloquentfilter
+</code></pre>
+
+<p>After installing the Eloquent Filter library, register the <code>EloquentFilter\ServiceProvider::class</code> in your <code>config/app.php</code> configuration file:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-s"><span class="pl-pds">'</span>providers<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [</span>
+<span class="pl-s1">    <span class="pl-c">// Other service providers...</span></span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-c1">EloquentFilter\</span><span class="pl-c1">ServiceProvider</span><span class="pl-k">::</span><span class="pl-c1">class</span>,</span>
+<span class="pl-s1">],</span></pre></div>
+
+<p>Copy the package config to your local config with the publish command:</p>
+
+<div class="highlight highlight-source-shell"><pre>php artisan vendor:publish --provider=<span class="pl-s"><span class="pl-pds">"</span>EloquentFilter\ServiceProvider<span class="pl-pds">"</span></span></pre></div>
+
+<p>In the <code>app/eloquentfilter.php</code> config file.  Set the namespace your model filters will reside in:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-s"><span class="pl-pds">'</span>namespace<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">"</span>App<span class="pl-cce">\\</span>ModelFilters<span class="pl-cce">\\</span><span class="pl-pds">"</span></span>,</span></pre></div>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="generating-the-filter" class="anchor" href="#generating-the-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating The Filter</h3>
+
+<p>You can create a model filter with the following artisan command:</p>
+
+<div class="highlight highlight-source-shell"><pre>php artisan model:filter User</pre></div>
+
+<p>Where <code>User</code> is the Eloquent Model you are creating the filter for.  This will create <code>app/ModelFilters/UserFilter.php</code></p>
+
+<h3>
+<a id="defining-the-filter-logic" class="anchor" href="#defining-the-filter-logic" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Defining The Filter Logic</h3>
+
+<p>Define the filter logic based on the camel cased input key passed to the <code>filter()</code> method.</p>
+
+<ul>
+<li>Empty strings are ignored</li>
+<li>
+<code>global()</code> will be called regardless of input</li>
+<li>
+<code>_id</code> is dropped from the end of the input to define the method so filtering <code>user_id</code> would use the <code>user()</code> method</li>
+<li>Input without a corresponding filter method are ignored</li>
+<li>The value of the key is injected into the method</li>
+<li>All values are accessible through the <code>$this-&gt;input()</code> method or a single value by key <code>$this-&gt;input($key)</code> </li>
+<li>All Eloquent Builder methods are accessible in <code>this</code> context in the model filter class.</li>
+</ul>
+
+<p>To define methods for the following input:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">[</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>   <span class="pl-k">=&gt;</span> <span class="pl-c1">5</span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>         <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>Tuck<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>mobile_phone<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>888555<span class="pl-pds">'</span></span></span>
+<span class="pl-s1">]</span></pre></div>
+
+<p>You would use the following methods:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-c">// This will filter 'company_id' OR 'company'</span></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">company</span>(<span class="pl-smi">$id</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">name</span>(<span class="pl-smi">$name</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-k">function</span>(<span class="pl-smi">$q</span>) <span class="pl-k">use</span> (<span class="pl-smi">$name</span>)</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>first_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">"</span>%<span class="pl-smi">$name</span>%<span class="pl-pds">"</span></span>)</span>
+<span class="pl-s1">                <span class="pl-k">-&gt;</span>orWhere(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">"</span>%<span class="pl-smi">$name</span>%<span class="pl-pds">"</span></span>);</span>
+<span class="pl-s1">        });</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">mobilePhone</span>(<span class="pl-smi">$phone</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>mobile_phone<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-smi">$phone</span>%<span class="pl-pds">"</span></span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">global</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>onlyShowDeletedForAdmins();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">onlyShowDeletedForAdmins</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">if</span>(<span class="pl-c1">Auth</span><span class="pl-k">::</span>user()<span class="pl-k">-&gt;</span>isAdmin())</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>withTrashed();</span>
+<span class="pl-s1">        }</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<blockquote>
+<p>Note:  In the above example if you do not want <code>_id</code> dropped from the end of the input you can set <code>protected $drop_id = false</code> on your filter class.  Doing this would allow you to have a <code>company()</code> filter method as well as a <code>companyId()</code> filter method.</p>
+
+<p>Note: In the example above all methods inside <code>global()</code> will be called every time <code>filter()</code> is called on the model</p>
+</blockquote>
+
+<h3>
+<a id="applying-the-filter-to-a-model" class="anchor" href="#applying-the-filter-to-a-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Applying The Filter To A Model</h3>
+
+<p>Implement the <code>EloquentFilter\Filterable</code> trait on any Eloquent model:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">EloqentFilter\Filterable</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Database\Eloquent\Model</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-c">//User Class</span></span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>This gives you access to the <code>filter()</code> method that accepts an array of input:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all())<span class="pl-k">-&gt;</span>get();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<h4>
+<a id="filtering-by-relationships" class="anchor" href="#filtering-by-relationships" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering By Relationships</h4>
+
+<p>In order to filter by a relationship (whether the relation is joined in the query or not) add the relation in the <code>$relations</code> array with the name of the relation as referred to on the model as the key and the column names that will be received as input to filter.</p>
+
+<p>The related model <strong>MUST</strong> have a ModelFilter associated with it.  We instantiate the related model's filter and use the column values from the <code>$relations</code> array to call the associated methods.</p>
+
+<p>This is helpful when querying multiple columns on a relation's table.  For a single column using a <code>$this-&gt;whereHas()</code> method in the model filter works just fine</p>
+
+<h5>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h5>
+
+<p>If I have a <code>User</code> that <code>hasMany</code> <code>App\Client::class</code> my model would look like:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">clients</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>hasMany(<span class="pl-c1">Client</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>Let's also say each <code>App\Client</code> has belongs to <code>App\Industry::class</code>:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">Client</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">industry</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>belongsTo(<span class="pl-c1">Industry</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>We want to query our User's and filter them based on the industry of their client:</p>
+
+<p>Input used to filter:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-smi">$input</span> <span class="pl-k">=</span> [</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span></span>
+<span class="pl-s1">];</span></pre></div>
+
+<p><code>UserFilter</code> with the relation defined so it's able to be queried.  </p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [</span>
+<span class="pl-s1">        <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>],</span>
+<span class="pl-s1">    ];</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p><code>ClientFilter</code> with the <code>industry</code> method that's used to filter:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">ClientFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [];</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">industry</span>(<span class="pl-smi">$id</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>If the following array is passed to the <code>filter()</code> method:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">[</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>       <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>er<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>  <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-c1">2</span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>      <span class="pl-k">=&gt;</span> [<span class="pl-c1">1</span>,<span class="pl-c1">4</span>,<span class="pl-c1">7</span>],</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>   <span class="pl-k">=&gt;</span> <span class="pl-c1">5</span></span>
+<span class="pl-s1">]</span></pre></div>
+
+<p>In <code>app/ModelFilters/UserFilter.php</code>:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App\ModelFilters</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">EloquentFilter\ModelFilter</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [</span>
+<span class="pl-s1">        <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>],</span>
+<span class="pl-s1">    ];</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">name</span>(<span class="pl-smi">$name</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-k">function</span>(<span class="pl-smi">$q</span>)</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>first_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-smi">$name</span> <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>)<span class="pl-k">-&gt;</span>orWhere(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$name</span><span class="pl-k">.</span><span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>);</span>
+<span class="pl-s1">        });     </span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">lastName</span>(<span class="pl-smi">$lastName</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$lastName</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">company</span>(<span class="pl-smi">$id</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>,<span class="pl-smi">$id</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">roles</span>(<span class="pl-smi">$ids</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>whereHas(<span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">$query</span>) <span class="pl-k">use</span> (<span class="pl-smi">$ids</span>)</span>
+<span class="pl-s1">        {</span>
+<span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>whereIn(<span class="pl-s"><span class="pl-pds">'</span>id<span class="pl-pds">'</span></span>, <span class="pl-smi">$ids</span>);</span>
+<span class="pl-s1">        });</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<h4>
+<a id="pagination" class="anchor" href="#pagination" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pagination</h4>
+
+<p>If you want to paginate your query and keep the url query string without having to use:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">{<span class="pl-k">!!</span> <span class="pl-smi">$pages</span><span class="pl-k">-&gt;</span>appends(<span class="pl-c1">Input</span><span class="pl-k">::</span>except(<span class="pl-s"><span class="pl-pds">'</span>page<span class="pl-pds">'</span></span>))<span class="pl-k">-&gt;</span>render() <span class="pl-k">!!</span>}</span></pre></div>
+
+<p>The <code>paginateFilter()</code> and <code>simplePaginateFilter()</code> methods accept the same input as <a href="https://laravel.com/docs/master/pagination#basic-usage">Laravel's paginator</a> and returns the respective paginator.</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$users</span> <span class="pl-k">=</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all())<span class="pl-k">-&gt;</span>paginateFilter();</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> view(<span class="pl-s"><span class="pl-pds">'</span>users.index<span class="pl-pds">'</span></span>, <span class="pl-c1">compact</span>(<span class="pl-s"><span class="pl-pds">'</span>users<span class="pl-pds">'</span></span>));</span>
+<span class="pl-s1">    }</span></pre></div>
+
+<p>OR:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">simpleIndex</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$users</span> <span class="pl-k">=</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all())<span class="pl-k">-&gt;</span>paginateSimpleFilter();</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> view(<span class="pl-s"><span class="pl-pds">'</span>users.index<span class="pl-pds">'</span></span>, <span class="pl-c1">compact</span>(<span class="pl-s"><span class="pl-pds">'</span>users<span class="pl-pds">'</span></span>));</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>In your view <code>$users-&gt;render()</code> will return pagination links as it normally would but with the original query string with empty input ignored.</p>
+
+<h1>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h1>
+
+<p>Any contributions welcome!</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/Tucker-Eric/EloquentFilter/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/Tucker-Eric/EloquentFilter/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/Tucker-Eric/EloquentFilter"></a> is maintained by <a href="https://github.com/Tucker-Eric">Tucker-Eric</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>

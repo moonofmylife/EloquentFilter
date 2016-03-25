@@ -153,7 +153,7 @@
 <ul>
 <li>Empty strings are ignored</li>
 <li>
-<code>global()</code> will be called regardless of input</li>
+<code>setup()</code> will be called regardless of input</li>
 <li>
 <code>_id</code> is dropped from the end of the input to define the method so filtering <code>user_id</code> would use the <code>user()</code> method</li>
 <li>Input without a corresponding filter method are ignored</li>
@@ -194,7 +194,7 @@
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>mobile_phone<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-smi">$phone</span>%<span class="pl-pds">"</span></span>);</span>
 <span class="pl-s1">    }</span>
 <span class="pl-s1"></span>
-<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">global</span>()</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">setup</span>()</span>
 <span class="pl-s1">    {</span>
 <span class="pl-s1">        <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>onlyShowDeletedForAdmins();</span>
 <span class="pl-s1">    }</span>
@@ -211,7 +211,7 @@
 <blockquote>
 <p>Note:  In the above example if you do not want <code>_id</code> dropped from the end of the input you can set <code>protected $drop_id = false</code> on your filter class.  Doing this would allow you to have a <code>company()</code> filter method as well as a <code>companyId()</code> filter method.</p>
 
-<p>Note: In the example above all methods inside <code>global()</code> will be called every time <code>filter()</code> is called on the model</p>
+<p>Note: In the example above all methods inside <code>setup()</code> will be called every time <code>filter()</code> is called on the model</p>
 </blockquote>
 
 <h3>

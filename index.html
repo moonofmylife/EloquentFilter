@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Eloquentfilter by Tucker-Eric</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="google-site-verification" content="_OTNdYsu-ZwTCD5-4FBTis2nRap0SyBcAkVBiTq1ExU" />
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
@@ -118,6 +117,39 @@
 <pre><code>composer require tucker-eric/eloquentfilter
 </code></pre>
 
+<h4>
+<a id="define-the-default-model-filter" class="anchor" href="#define-the-default-model-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Define the default model filter</h4>
+
+<p>Create a public method <code>modelFilter()</code> that returns <code>$this-&gt;provideFilter(Your\Model\Filter::class);</code> in your model.</p>
+
+<blockquote>
+<p>Not definining a filter in your model will default the filter to <code>App\ModelFilters\{Model}Filter</code>. For example, in our user model the <code>filter()</code> method will use the <code>App\ModelFilters\UserFilter</code> if not otherwise defined.  <code>App\ModelFilters</code> namespace is used if there is no configuration file.</p>
+</blockquote>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">EloqentFilter\Filterable</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Database\Eloquent\Model</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">modelFilter</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>provideFilter(<span class="pl-c1">App\ModelFilters\CustomFilters\</span><span class="pl-c1">CustomUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-c">//User Class</span></span>
+<span class="pl-s1">}</span></pre></div>
+
+<h4>
+<a id="with-configuration-file-optional" class="anchor" href="#with-configuration-file-optional" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>With Configuration File (Optional)</h4>
+
+<blockquote>
+<p>Registering the service provider will give you access to the <code>php artisan model:filter {model}</code> command as well as allow you to publish the configuration file.  Registering the service provider is not required as long as you have a <code>modelFilter()</code> method on all models using the <code>EloquentFilter\Filterable</code> trait OR all your model filters reside in the <code>App\ModelFilters</code> namespace and follow the naming convention of <code>{Model}Filter</code></p>
+</blockquote>
+
 <p>After installing the Eloquent Filter library, register the <code>EloquentFilter\ServiceProvider::class</code> in your <code>config/app.php</code> configuration file:</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-s"><span class="pl-pds">'</span>providers<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [</span>
@@ -134,17 +166,21 @@
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-s"><span class="pl-pds">'</span>namespace<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">"</span>App<span class="pl-cce">\\</span>ModelFilters<span class="pl-cce">\\</span><span class="pl-pds">"</span></span>,</span></pre></div>
 
-<h2>
-<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+<h4>
+<a id="generating-the-filter" class="anchor" href="#generating-the-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating The Filter</h4>
 
-<h3>
-<a id="generating-the-filter" class="anchor" href="#generating-the-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating The Filter</h3>
+<blockquote>
+<p>Only available if you have registered <code>EloquentFilter\ServiceProvider::class</code> in the providers array in your `config/app.php'</p>
+</blockquote>
 
 <p>You can create a model filter with the following artisan command:</p>
 
 <div class="highlight highlight-source-shell"><pre>php artisan model:filter User</pre></div>
 
 <p>Where <code>User</code> is the Eloquent Model you are creating the filter for.  This will create <code>app/ModelFilters/UserFilter.php</code></p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
 
 <h3>
 <a id="defining-the-filter-logic" class="anchor" href="#defining-the-filter-logic" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Defining The Filter Logic</h3>
@@ -385,6 +421,34 @@
 <span class="pl-s1">}</span></pre></div>
 
 <p>In your view <code>$users-&gt;render()</code> will return pagination links as it normally would but with the original query string with empty input ignored.</p>
+
+<h4>
+<a id="dynamic-filters" class="anchor" href="#dynamic-filters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic Filters</h4>
+
+<p>Sometimes you need a dynamic way to change filters on a model or maybe use multiple filters on a model.  To define a dynamic filter just pass the filter as the second parameter of the <code>filter()</code> method:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-pse">&lt;?php</span><span class="pl-s1"></span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">namespace</span> <span class="pl-en">App\Http\Controllers</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Http\Request</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\Http\Requests</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\User</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\Admin\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">AdminFilter</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\User\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">BasicUserFilter</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Auth</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$userFilter</span> <span class="pl-k">=</span> <span class="pl-c1">Auth</span><span class="pl-k">::</span>user()<span class="pl-k">-&gt;</span>isAdmin() ? <span class="pl-c1">AdminFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span> : <span class="pl-c1">BasicUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all(), <span class="pl-smi">$userFilter</span>)<span class="pl-k">-&gt;</span>get();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span>
+<span class="pl-s1"></span></pre></div>
 
 <h1>
 <a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h1>

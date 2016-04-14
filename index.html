@@ -24,7 +24,8 @@
 
 <p><a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/v/stable" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/downloads" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/license" alt="License"></a></p>
+<a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/license" alt="License"></a>
+<a href="https://styleci.io/repos/53163405/"><img src="https://styleci.io/repos/53163405/shield" alt="StyleCI"></a></p>
 
 <p>An Eloquent way to filter Eloquent Models</p>
 
@@ -179,6 +180,12 @@
 
 <p>Where <code>User</code> is the Eloquent Model you are creating the filter for.  This will create <code>app/ModelFilters/UserFilter.php</code></p>
 
+<p>The command also supports psr-4 namespacing for creating filters.  You just need to make sure you escape the backslashes in the class name.  For example:</p>
+
+<div class="highlight highlight-source-shell"><pre>php artisan model:filter AdminFilters<span class="pl-cce">\\</span>User</pre></div>
+
+<p>This would create <code>app/ModelFilters/AdminFilters/UserFilter.php</code></p>
+
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
 
@@ -195,7 +202,8 @@
 <code>_id</code> is dropped from the end of the input to define the method so filtering <code>user_id</code> would use the <code>user()</code> method</li>
 <li>Input without a corresponding filter method are ignored</li>
 <li>The value of the key is injected into the method</li>
-<li>All values are accessible through the <code>$this-&gt;input()</code> method or a single value by key <code>$this-&gt;input($key)</code> </li>
+<li>All values are accessible through the <code>$this-&gt;input()</code> method or a single value by key <code>$this-&gt;input($key)</code>
+</li>
 <li>All Eloquent Builder methods are accessible in <code>this</code> context in the model filter class.</li>
 </ul>
 
@@ -322,7 +330,7 @@
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span></span>
 <span class="pl-s1">];</span></pre></div>
 
-<p><code>UserFilter</code> with the relation defined so it's able to be queried.  </p>
+<p><code>UserFilter</code> with the relation defined so it's able to be queried.</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
 <span class="pl-s1">{</span>
@@ -370,7 +378,7 @@
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-k">function</span>(<span class="pl-smi">$q</span>)</span>
 <span class="pl-s1">        {</span>
 <span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>first_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-smi">$name</span> <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>)<span class="pl-k">-&gt;</span>orWhere(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$name</span><span class="pl-k">.</span><span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>);</span>
-<span class="pl-s1">        });     </span>
+<span class="pl-s1">        });</span>
 <span class="pl-s1">    }</span>
 <span class="pl-s1"></span>
 <span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">lastName</span>(<span class="pl-smi">$lastName</span>)</span>

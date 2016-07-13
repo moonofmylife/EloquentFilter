@@ -24,8 +24,10 @@
 
 <p><a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/v/stable" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/downloads" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/d/daily" alt="Daily Downloads"></a>
 <a href="https://packagist.org/packages/tucker-eric/eloquentfilter"><img src="https://poser.pugx.org/tucker-eric/eloquentfilter/license" alt="License"></a>
-<a href="https://styleci.io/repos/53163405/"><img src="https://styleci.io/repos/53163405/shield" alt="StyleCI"></a></p>
+<a href="https://styleci.io/repos/53163405/"><img src="https://styleci.io/repos/53163405/shield" alt="StyleCI"></a>
+<a href="https://travis-ci.org/Tucker-Eric/EloquentFilter"><img src="https://travis-ci.org/Tucker-Eric/EloquentFilter.svg?branch=master" alt="Build Status"></a></p>
 
 <p>An Eloquent way to filter Eloquent Models</p>
 
@@ -40,7 +42,7 @@
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1">[</span>
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>       <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>er<span class="pl-pds">'</span></span>,</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>  <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>  <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>,</span>
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>2<span class="pl-pds">'</span></span>,</span>
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>      <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>1<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>4<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>7<span class="pl-pds">'</span></span>],</span>
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>   <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span></span>
@@ -341,6 +343,10 @@
 
 <p><code>ClientFilter</code> with the <code>industry</code> method that's used to filter:</p>
 
+<blockquote>
+<p><strong>Note:</strong> The <code>$relations</code> array should identify the relation and the input key to filter by that relation. Just as the <code>ModelFilter</code> works, this will access the camelCased method on that relation's filter. If the above example was using the key <code>industry_type</code> for the input the relations array would be <code>$relations = ['clients' =&gt; ['industry_type']]</code> and the <code>ClientFilter</code> would have the method <code>industryType()</code>.</p>
+</blockquote>
+
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">ClientFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
 <span class="pl-s1">{</span>
 <span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [];</span>
@@ -399,6 +405,31 @@
 <span class="pl-s1">        });</span>
 <span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
+
+<h5>
+<a id="adding-relation-values-to-filter" class="anchor" href="#adding-relation-values-to-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Adding Relation Values To Filter</h5>
+
+<p>Sometimes, based on the value of a parameter you may need to push data to a relation filter.  The <code>push()</code> method does just this.
+It accepts one argument as an array of key value pairs or to arguments as a key value pair <code>push($key, $value)</code>.
+Related models are filtered AFTER all local values have been executed you can use this method in any filter method.
+This avoids having to query a related table more than once.  For Example:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>status<span class="pl-pds">'</span></span>],</span>
+<span class="pl-s1">];</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">statusType</span>(<span class="pl-smi">$type</span>)</span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">if</span>(<span class="pl-smi">$type</span> <span class="pl-k">===</span> <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>) {</span>
+<span class="pl-s1">        <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>push(<span class="pl-s"><span class="pl-pds">'</span>status<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>all<span class="pl-pds">'</span></span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>The above example will pass <code>'all'</code> to the <code>stats()</code> method on the <code>clients</code> relation of the model.</p>
+
+<blockquote>
+<p>Calling the <code>push()</code> method in the <code>setup()</code> method will allow you to push values to the input for filter it's called on</p>
+</blockquote>
 
 <h4>
 <a id="pagination" class="anchor" href="#pagination" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pagination</h4>

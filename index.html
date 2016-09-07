@@ -498,30 +498,26 @@ This avoids having to query a related table more than once.  For Example:</p>
 <thead>
 <tr>
 <th>EloquentFilter Method</th>
-<th>Description</th>
 <th>QueryBuilder Equivalent</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>$this-&gt;whereLike($column, $string)</code></td>
-<td>Searches for the given string in a column</td>
 <td><code>$query-&gt;where($column, 'LIKE', '%'.$string.'%')</code></td>
 </tr>
 <tr>
 <td><code>$this-&gt;whereBeginsWith($column, $string)</code></td>
-<td>Searches for rows where the given column begins with the given string</td>
 <td><code>$query-&gt;where($column, 'LIKE', $string.'%')</code></td>
 </tr>
 <tr>
 <td><code>$this-&gt;whereEndsWith($column, $string)</code></td>
-<td>Searches for rows where the given column ends with the given string</td>
 <td><code>$query-&gt;where($column, 'LIKE', '%'.$string)</code></td>
 </tr>
 </tbody>
 </table>
 
-<p>Since these methods are part of the <code>Filterable</code> trait they are accessible from any model that implements the trait without the need to call the filter.</p>
+<p>Since these methods are part of the <code>Filterable</code> trait they are accessible from any model that implements the trait without the need to call in the Model's EloquentFilter.</p>
 
 <h1>
 <a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h1>

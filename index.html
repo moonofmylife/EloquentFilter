@@ -291,16 +291,13 @@
 <h4>
 <a id="filtering-by-relationships" class="anchor" href="#filtering-by-relationships" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering By Relationships</h4>
 
-<p>In order to filter by a relationship (whether the relation is joined in the query or not) add the relation in the <code>$relations</code> array with the name of the relation as referred to on the model as the key and the column names that will be received as input to filter.</p>
+<blockquote>
+<p>There are two ways to filter by related models.  Using the <code>$relations</code> array to define the input to be injected into the related Model's filter.  If the related model doesn't have a model filter of it's own or you just want to define how to filter that relationship locally instead of adding the logic to that Model's filter then use the <code>related()</code> method to filter by a related model that doesn't have a ModelFilter.  You can even combine the 2 and define which input fields in the <code>$relations</code> array you want to use that Model's filter for as well as use the <code>related()</code> method to define local methods on that same relation.  Both methods nest the filter constraints into the same <code>whereHas()</code> query on that relation.</p>
+</blockquote>
 
-<p>The related model <strong>MUST</strong> have a ModelFilter associated with it.  We instantiate the related model's filter and use the column values from the <code>$relations</code> array to call the associated methods.</p>
+<p>For both examples we will use the following models:</p>
 
-<p>This is helpful when querying multiple columns on a relation's table.  For a single column using a <code>$this-&gt;whereHas()</code> method in the model filter works just fine</p>
-
-<h5>
-<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h5>
-
-<p>If I have a <code>User</code> that <code>hasMany</code> <code>App\Client::class</code> my model would look like:</p>
+<p>A <code>App\User</code> that <code>hasMany</code> <code>App\Client::class</code>:</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
 <span class="pl-s1">{</span>
@@ -312,7 +309,7 @@
 <span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
 
-<p>Let's also say each <code>App\Client</code> has belongs to <code>App\Industry::class</code>:</p>
+<p>And each <code>App\Client</code> belongs to <code>App\Industry::class</code>:</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">Client</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
 <span class="pl-s1">{</span>
@@ -322,22 +319,96 @@
 <span class="pl-s1">    {</span>
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>belongsTo(<span class="pl-c1">Industry</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
 <span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">scopeHasRevenue</span>(<span class="pl-smi">$query</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>total_revenue<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>&gt;<span class="pl-pds">'</span></span>, <span class="pl-c1">0</span>);</span>
+<span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
 
-<p>We want to query our User's and filter them based on the industry of their client:</p>
+<p>We want to query our users and filter them by the industry and volume potential of their clients that have done revenue in the past.</p>
 
 <p>Input used to filter:</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-smi">$input</span> <span class="pl-k">=</span> [</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>         <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>10000<span class="pl-pds">'</span></span></span>
 <span class="pl-s1">];</span></pre></div>
+
+<h5>
+<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup</h5>
+
+<p>Both methods will invoke a setup query on the relationship that will be called EVERY time this relationship is queried.  The setup methods signature is <code>{$related}Setup()</code> and is injected with an instance of that relations query builder.  For this example let's say when querying users by their clients I only ever want to show agents that have clients with revenue. Without choosing wich method to put it in (because sometimes we may not have all the input and miss the scope all together if we choose the wrong one) and to avoid query duplication by placing that constraint on ALL methods for that relation we call the related setup method in the <code>UserFilter</code> like:</p>
+
+<blockquote>
+<p>You can learn more about scopes <a href="https://laravel.com/docs/master/eloquent#local-scopes">here</a></p>
+</blockquote>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">clientsSetup</span>(<span class="pl-smi">$query</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>hasRevenue();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>This prepend all queries with the <code>hasRevenue()</code> whenever the <code>UserFilter</code> runs any constriants on the <code>clients()</code> relationship.  If there are no queries to the <code>clients()</code> relationship then this method will not be invoked.</p>
+
+<h4>
+<a id="ways-to-filter-related-models" class="anchor" href="#ways-to-filter-related-models" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ways To Filter Related Models</h4>
+
+<p>We'll go over the <code>related()</code> method first since it is a little easier and requires less setup.</p>
+
+<h5>
+<a id="to-filter-a-related-model-using-the-related-method" class="anchor" href="#to-filter-a-related-model-using-the-related-method" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To filter a related model using the <code>related()</code> method:</h5>
+
+<p>The <code>related()</code> method is a little easier to setup and is great if you aren't going to be using the related Model's filter to ever filter that Model explicitly.  The <code>related()</code> method takes the same parameters as the <code>Eloquent\Builder</code>'s <code>where()</code> method except for the first parameter being the relationship name.</p>
+
+<h5>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h5>
+
+<p><code>UserFilter</code> with an <code>industry()</code> method that uses the <code>ModelFilter</code>'s <code>related()</code> method</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">industry</span>(<span class="pl-smi">$id</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>related(<span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>=<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-c">// This would also be shorthand for the same query</span></span>
+<span class="pl-s1">        <span class="pl-c">// return $this-&gt;related('clients', 'industry_id', $id);</span></span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">potentialVolume</span>(<span class="pl-smi">$volume</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>related(<span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>&gt;=<span class="pl-pds">'</span></span>, <span class="pl-smi">$volume</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span></pre></div>
+
+<p>Or you can even pass a closure as the second argument which will inject an instance of the related model's query builder like:</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1">    <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>related(<span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">$query</span>) <span class="pl-k">use</span> (<span class="pl-smi">$id</span>) {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
+<span class="pl-s1">    });</span></pre></div>
+
+<h5>
+<a id="to-filter-a-related-model-using-the-relations-array" class="anchor" href="#to-filter-a-related-model-using-the-relations-array" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To filter a related model using the <code>$relations</code> array:</h5>
+
+<p>Add the relation in the <code>$relations</code> array with the name of the relation as referred to on the model as the key and an array of input keys that was passed to the <code>filter()</code> method.</p>
+
+<p>The related model <strong>MUST</strong> have a ModelFilter associated with it.  We instantiate the related model's filter and use the input values from the <code>$relations</code> array to call the associated methods.</p>
+
+<p>This is helpful when querying multiple columns on a relation's table while avoiding multipe <code>whereHas()</code> calls for the same relationship.  For a single column using a <code>$this-&gt;whereHas()</code> method in the model filter works just fine.  In fact, under ther hood the model filter applies all constraints in the <code>whereHas()</code> method.</p>
+
+<h5>
+<a id="example-1" class="anchor" href="#example-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example:</h5>
 
 <p><code>UserFilter</code> with the relation defined so it's able to be queried.</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
 <span class="pl-s1">{</span>
 <span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-smi">$relations</span> <span class="pl-k">=</span> [</span>
-<span class="pl-s1">        <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>],</span>
+<span class="pl-s1">        <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span>],</span>
 <span class="pl-s1">    ];</span>
 <span class="pl-s1">}</span></pre></div>
 
@@ -355,16 +426,24 @@
 <span class="pl-s1">    {</span>
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
 <span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">potentialVolume</span>(<span class="pl-smi">$volume</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>&gt;=<span class="pl-pds">'</span></span>, <span class="pl-smi">$volume</span>);</span>
+<span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
+
+<p>You can even use both together and it will produce the same result and only query the related model once.  An example would be:</p>
 
 <p>If the following array is passed to the <code>filter()</code> method:</p>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1">[</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>       <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>er<span class="pl-pds">'</span></span>,</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>  <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span></span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-c1">2</span>,</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>      <span class="pl-k">=&gt;</span> [<span class="pl-c1">1</span>,<span class="pl-c1">4</span>,<span class="pl-c1">7</span>],</span>
-<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>   <span class="pl-k">=&gt;</span> <span class="pl-c1">5</span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>name<span class="pl-pds">'</span></span>              <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>er<span class="pl-pds">'</span></span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>         <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span></span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>company_id<span class="pl-pds">'</span></span>        <span class="pl-k">=&gt;</span> <span class="pl-c1">2</span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>roles<span class="pl-pds">'</span></span>             <span class="pl-k">=&gt;</span> [<span class="pl-c1">1</span>,<span class="pl-c1">4</span>,<span class="pl-c1">7</span>],</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>          <span class="pl-k">=&gt;</span> <span class="pl-c1">5</span>,</span>
+<span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>10000<span class="pl-pds">'</span></span></span>
 <span class="pl-s1">]</span></pre></div>
 
 <p>In <code>app/ModelFilters/UserFilter.php</code>:</p>
@@ -379,12 +458,22 @@
 <span class="pl-s1">        <span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> [<span class="pl-s"><span class="pl-pds">'</span>industry<span class="pl-pds">'</span></span>],</span>
 <span class="pl-s1">    ];</span>
 <span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">clientsSetup</span>(<span class="pl-smi">$query</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>hasRevenue();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
 <span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">name</span>(<span class="pl-smi">$name</span>)</span>
 <span class="pl-s1">    {</span>
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-k">function</span>(<span class="pl-smi">$q</span>)</span>
 <span class="pl-s1">        {</span>
 <span class="pl-s1">            <span class="pl-k">return</span> <span class="pl-smi">$q</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>first_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-smi">$name</span> <span class="pl-k">.</span> <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>)<span class="pl-k">-&gt;</span>orWhere(<span class="pl-s"><span class="pl-pds">'</span>last_name<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>LIKE<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span> <span class="pl-k">.</span> <span class="pl-smi">$name</span><span class="pl-k">.</span><span class="pl-s"><span class="pl-pds">'</span>%<span class="pl-pds">'</span></span>);</span>
 <span class="pl-s1">        });</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">potentialVolume</span>(<span class="pl-smi">$volume</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>related(<span class="pl-s"><span class="pl-pds">'</span>clients<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>&gt;=<span class="pl-pds">'</span></span>, <span class="pl-smi">$volume</span>);</span>
 <span class="pl-s1">    }</span>
 <span class="pl-s1"></span>
 <span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">lastName</span>(<span class="pl-smi">$lastName</span>)</span>

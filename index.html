@@ -120,37 +120,48 @@
 <pre><code>composer require tucker-eric/eloquentfilter
 </code></pre>
 
+<p>There are a few ways to define the filte a model will use:</p>
+
+<ul>
+<li><a href="#default-settings">Use EloquentFilter's Default Settings</a></li>
+<li><a href="#with-configuration-file-optional">Use A Custom Namespace For All Filters</a></li>
+<li><a href="#define-the-default-model-filter">Define A Model's Default Filter</a></li>
+<li><a href="#dynamic-filters">Dynamically Select A Model's Filter</a></li>
+</ul>
+
 <h4>
-<a id="define-the-default-model-filter" class="anchor" href="#define-the-default-model-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Define the default model filter</h4>
+<a id="default-settings" class="anchor" href="#default-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Default Settings</h4>
 
-<p>Create a public method <code>modelFilter()</code> that returns <code>$this-&gt;provideFilter(Your\Model\Filter::class);</code> in your model.</p>
+<p>The default namespace for all filters is <code>App\ModelFilters\</code> and each Model expects the filter classname to follow the <code>{$ModelName}Filter</code> naming convention regardless of the namespace the model is in.  Here is an example of Models and their respective filters based on the default naming convention.</p>
 
-<blockquote>
-<p>Not definining a filter in your model will default the filter to <code>App\ModelFilters\{Model}Filter</code>. For example, in our user model the <code>filter()</code> method will use the <code>App\ModelFilters\UserFilter</code> if not otherwise defined.  <code>App\ModelFilters</code> namespace is used if there is no configuration file.</p>
-</blockquote>
-
-<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">EloquentFilter\Filterable</span>;</span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Database\Eloquent\Model</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
-<span class="pl-s1">{</span>
-<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">modelFilter</span>()</span>
-<span class="pl-s1">    {</span>
-<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>provideFilter(<span class="pl-c1">App\ModelFilters\CustomFilters\</span><span class="pl-c1">CustomUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
-<span class="pl-s1">    }</span>
-<span class="pl-s1"></span>
-<span class="pl-s1">    <span class="pl-c">//User Class</span></span>
-<span class="pl-s1">}</span></pre></div>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>ModelFilter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>App\User</code></td>
+<td><code>App\ModelFilters\UserFilter</code></td>
+</tr>
+<tr>
+<td><code>App\FrontEnd\PrivatePost</code></td>
+<td><code>App\ModelFilters\PrivatePostFilter</code></td>
+</tr>
+<tr>
+<td><code>App\FrontEnd\Public\GuestPost</code></td>
+<td><code>App\ModelFilters\GuestPostFilter</code></td>
+</tr>
+</tbody>
+</table>
 
 <h4>
 <a id="with-configuration-file-optional" class="anchor" href="#with-configuration-file-optional" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>With Configuration File (Optional)</h4>
 
 <blockquote>
-<p>Registering the service provider will give you access to the <code>php artisan model:filter {model}</code> command as well as allow you to publish the configuration file.  Registering the service provider is not required as long as you have a <code>modelFilter()</code> method on all models using the <code>EloquentFilter\Filterable</code> trait OR all your model filters reside in the <code>App\ModelFilters</code> namespace and follow the naming convention of <code>{Model}Filter</code></p>
+<p>Registering the service provider will give you access to the <code>php artisan model:filter {model}</code> command as well as allow you to publish the configuration file.  Registering the service provider is not required and only needed if you want to change the default namespace or use the artisan command</p>
 </blockquote>
 
 <p>After installing the Eloquent Filter library, register the <code>EloquentFilter\ServiceProvider::class</code> in your <code>config/app.php</code> configuration file:</p>
@@ -170,7 +181,57 @@
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-s"><span class="pl-pds">'</span>namespace<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">"</span>App<span class="pl-cce">\\</span>ModelFilters<span class="pl-cce">\\</span><span class="pl-pds">"</span></span>,</span></pre></div>
 
 <h4>
-<a id="generating-the-filter" class="anchor" href="#generating-the-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating The Filter</h4>
+<a id="define-the-default-model-filter" class="anchor" href="#define-the-default-model-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Define The Default Model Filter</h4>
+
+<p>Create a public method <code>modelFilter()</code> that returns <code>$this-&gt;provideFilter(Your\Model\Filter::class);</code> in your model.</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">&lt;</span>?<span class="pl-c1">php</span> <span class="pl-k">namespace</span> <span class="pl-en">App</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">EloquentFilter\Filterable</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Database\Eloquent\Model</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">extends</span> <span class="pl-e">Model</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">use</span> <span class="pl-c1">Filterable</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">modelFilter</span>()</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>provideFilter(<span class="pl-c1">App\ModelFilters\CustomFilters\</span><span class="pl-c1">CustomUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>);</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">    <span class="pl-c">//User Class</span></span>
+<span class="pl-s1">}</span></pre></div>
+
+<h4>
+<a id="dynamic-filters" class="anchor" href="#dynamic-filters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic Filters</h4>
+
+<p>You can define the filter dynamically by passing the filter to use as the second parameter of the <code>filter()</code> method.  Defining a filter dynamically will take precedent over any other filters defined for the model.</p>
+
+<div class="highlight highlight-text-html-php"><pre><span class="pl-pse">&lt;?php</span><span class="pl-s1"></span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">namespace</span> <span class="pl-en">App\Http\Controllers</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Http\Request</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\Http\Requests</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\User</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\Admin\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">AdminFilter</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\User\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">BasicUserFilter</span>;</span>
+<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Auth</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
+<span class="pl-s1">{</span>
+<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
+<span class="pl-s1">    {</span>
+<span class="pl-s1">        <span class="pl-smi">$userFilter</span> <span class="pl-k">=</span> <span class="pl-c1">Auth</span><span class="pl-k">::</span>user()<span class="pl-k">-&gt;</span>isAdmin() ? <span class="pl-c1">AdminFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span> : <span class="pl-c1">BasicUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>;</span>
+<span class="pl-s1"></span>
+<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all(), <span class="pl-smi">$userFilter</span>)<span class="pl-k">-&gt;</span>get();</span>
+<span class="pl-s1">    }</span>
+<span class="pl-s1">}</span>
+<span class="pl-s1"></span></pre></div>
+
+<h3>
+<a id="generating-the-filter" class="anchor" href="#generating-the-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating The Filter</h3>
 
 <blockquote>
 <p>Only available if you have registered <code>EloquentFilter\ServiceProvider::class</code> in the providers array in your `config/app.php'</p>
@@ -256,10 +317,40 @@
 <span class="pl-s1">}</span></pre></div>
 
 <blockquote>
-<p>Note:  In the above example if you do not want <code>_id</code> dropped from the end of the input you can set <code>protected $drop_id = false</code> on your filter class.  Doing this would allow you to have a <code>company()</code> filter method as well as a <code>companyId()</code> filter method.</p>
+<p><strong>Note:</strong>  In the above example if you do not want <code>_id</code> dropped from the end of the input you can set <code>protected $drop_id = false</code> on your filter class.  Doing this would allow you to have a <code>company()</code> filter method as well as a <code>companyId()</code> filter method.</p>
 
-<p>Note: In the example above all methods inside <code>setup()</code> will be called every time <code>filter()</code> is called on the model</p>
+<p><strong>Note:</strong> In the example above all methods inside <code>setup()</code> will be called every time <code>filter()</code> is called on the model</p>
 </blockquote>
+
+<h4>
+<a id="additional-filter-methods" class="anchor" href="#additional-filter-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional Filter Methods</h4>
+
+<p>The <code>Filterable</code> trait also comes with the below query builder helper methods:</p>
+
+<table>
+<thead>
+<tr>
+<th>EloquentFilter Method</th>
+<th>QueryBuilder Equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$this-&gt;whereLike($column, $string)</code></td>
+<td><code>$query-&gt;where($column, 'LIKE', '%'.$string.'%')</code></td>
+</tr>
+<tr>
+<td><code>$this-&gt;whereBeginsWith($column, $string)</code></td>
+<td><code>$query-&gt;where($column, 'LIKE', $string.'%')</code></td>
+</tr>
+<tr>
+<td><code>$this-&gt;whereEndsWith($column, $string)</code></td>
+<td><code>$query-&gt;where($column, 'LIKE', '%'.$string)</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>Since these methods are part of the <code>Filterable</code> trait they are accessible from any model that implements the trait without the need to call in the Model's EloquentFilter.</p>
 
 <h3>
 <a id="applying-the-filter-to-a-model" class="anchor" href="#applying-the-filter-to-a-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Applying The Filter To A Model</h3>
@@ -288,8 +379,8 @@
 <span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
 
-<h4>
-<a id="filtering-by-relationships" class="anchor" href="#filtering-by-relationships" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering By Relationships</h4>
+<h2>
+<a id="filtering-by-relationships" class="anchor" href="#filtering-by-relationships" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering By Relationships</h2>
 
 <blockquote>
 <p>There are two ways to filter by related models.  Using the <code>$relations</code> array to define the input to be injected into the related Model's filter.  If the related model doesn't have a model filter of it's own or you just want to define how to filter that relationship locally instead of adding the logic to that Model's filter then use the <code>related()</code> method to filter by a related model that doesn't have a ModelFilter.  You can even combine the 2 and define which input fields in the <code>$relations</code> array you want to use that Model's filter for as well as use the <code>related()</code> method to define local methods on that same relation.  Both methods nest the filter constraints into the same <code>whereHas()</code> query on that relation.</p>
@@ -335,14 +426,10 @@
 <span class="pl-s1">    <span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span> <span class="pl-k">=&gt;</span> <span class="pl-s"><span class="pl-pds">'</span>10000<span class="pl-pds">'</span></span></span>
 <span class="pl-s1">];</span></pre></div>
 
-<h5>
-<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup</h5>
+<h3>
+<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup</h3>
 
 <p>Both methods will invoke a setup query on the relationship that will be called EVERY time this relationship is queried.  The setup methods signature is <code>{$related}Setup()</code> and is injected with an instance of that relations query builder.  For this example let's say when querying users by their clients I only ever want to show agents that have clients with revenue. Without choosing wich method to put it in (because sometimes we may not have all the input and miss the scope all together if we choose the wrong one) and to avoid query duplication by placing that constraint on ALL methods for that relation we call the related setup method in the <code>UserFilter</code> like:</p>
-
-<blockquote>
-<p>You can learn more about scopes <a href="https://laravel.com/docs/master/eloquent#local-scopes">here</a></p>
-</blockquote>
 
 <div class="highlight highlight-text-html-php"><pre><span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserFilter</span> <span class="pl-k">extends</span> <span class="pl-e">ModelFilter</span></span>
 <span class="pl-s1">{</span>
@@ -354,13 +441,21 @@
 
 <p>This prepend all queries with the <code>hasRevenue()</code> whenever the <code>UserFilter</code> runs any constriants on the <code>clients()</code> relationship.  If there are no queries to the <code>clients()</code> relationship then this method will not be invoked.</p>
 
+<blockquote>
+<p>You can learn more about scopes <a href="https://laravel.com/docs/master/eloquent#local-scopes">here</a></p>
+</blockquote>
+
+<h3>
+<a id="ways-to-filter-related-models" class="anchor" href="#ways-to-filter-related-models" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ways To Filter Related Models</h3>
+
+<ul>
+<li><a href="#filter-related-models-with-the-related-method">With The <code>related()</code> Method</a></li>
+<li><a href="#filter-related-models-using-the-relations-array">Using The <code>$relations</code> Array</a></li>
+<li><a href="#filter-related-models-with-both-methods">With Both Methods</a></li>
+</ul>
+
 <h4>
-<a id="ways-to-filter-related-models" class="anchor" href="#ways-to-filter-related-models" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ways To Filter Related Models</h4>
-
-<p>We'll go over the <code>related()</code> method first since it is a little easier and requires less setup.</p>
-
-<h5>
-<a id="to-filter-a-related-model-using-the-related-method" class="anchor" href="#to-filter-a-related-model-using-the-related-method" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To filter a related model using the <code>related()</code> method:</h5>
+<a id="filter-related-models-with-the-related-method" class="anchor" href="#filter-related-models-with-the-related-method" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filter Related Models With The <code>related()</code> Method:</h4>
 
 <p>The <code>related()</code> method is a little easier to setup and is great if you aren't going to be using the related Model's filter to ever filter that Model explicitly.  The <code>related()</code> method takes the same parameters as the <code>Eloquent\Builder</code>'s <code>where()</code> method except for the first parameter being the relationship name.</p>
 
@@ -391,8 +486,8 @@
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$query</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>industry_id<span class="pl-pds">'</span></span>, <span class="pl-smi">$id</span>);</span>
 <span class="pl-s1">    });</span></pre></div>
 
-<h5>
-<a id="to-filter-a-related-model-using-the-relations-array" class="anchor" href="#to-filter-a-related-model-using-the-relations-array" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To filter a related model using the <code>$relations</code> array:</h5>
+<h4>
+<a id="filter-related-models-using-the-relations-array" class="anchor" href="#filter-related-models-using-the-relations-array" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filter Related Models Using The <code>$relations</code> Array:</h4>
 
 <p>Add the relation in the <code>$relations</code> array with the name of the relation as referred to on the model as the key and an array of input keys that was passed to the <code>filter()</code> method.</p>
 
@@ -432,6 +527,9 @@
 <span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-smi">$this</span><span class="pl-k">-&gt;</span>where(<span class="pl-s"><span class="pl-pds">'</span>potential_volume<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>&gt;=<span class="pl-pds">'</span></span>, <span class="pl-smi">$volume</span>);</span>
 <span class="pl-s1">    }</span>
 <span class="pl-s1">}</span></pre></div>
+
+<h4>
+<a id="filter-related-models-with-both-methods" class="anchor" href="#filter-related-models-with-both-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filter Related Models With Both Methods</h4>
 
 <p>You can even use both together and it will produce the same result and only query the related model once.  An example would be:</p>
 
@@ -549,64 +647,6 @@ This avoids having to query a related table more than once.  For Example:</p>
 <span class="pl-s1">}</span></pre></div>
 
 <p>In your view <code>$users-&gt;render()</code> will return pagination links as it normally would but with the original query string with empty input ignored.</p>
-
-<h4>
-<a id="dynamic-filters" class="anchor" href="#dynamic-filters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic Filters</h4>
-
-<p>Sometimes you need a dynamic way to change filters on a model or maybe use multiple filters on a model.  To define a dynamic filter just pass the filter as the second parameter of the <code>filter()</code> method:</p>
-
-<div class="highlight highlight-text-html-php"><pre><span class="pl-pse">&lt;?php</span><span class="pl-s1"></span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">namespace</span> <span class="pl-en">App\Http\Controllers</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Illuminate\Http\Request</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\Http\Requests</span>;</span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\User</span>;</span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\Admin\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">AdminFilter</span>;</span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">App\ModelFilters\User\UserFilter</span> <span class="pl-k">as</span> <span class="pl-c1">BasicUserFilter</span>;</span>
-<span class="pl-s1"><span class="pl-k">use</span> <span class="pl-c1">Auth</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1"><span class="pl-k">class</span> <span class="pl-en">UserController</span> <span class="pl-k">extends</span> <span class="pl-e">Controller</span></span>
-<span class="pl-s1">{</span>
-<span class="pl-s1">    <span class="pl-k">public</span> <span class="pl-k">function</span> <span class="pl-en">index</span>(<span class="pl-c1">Request</span> <span class="pl-smi">$request</span>)</span>
-<span class="pl-s1">    {</span>
-<span class="pl-s1">        <span class="pl-smi">$userFilter</span> <span class="pl-k">=</span> <span class="pl-c1">Auth</span><span class="pl-k">::</span>user()<span class="pl-k">-&gt;</span>isAdmin() ? <span class="pl-c1">AdminFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span> : <span class="pl-c1">BasicUserFilter</span><span class="pl-k">::</span><span class="pl-c1">class</span>;</span>
-<span class="pl-s1"></span>
-<span class="pl-s1">        <span class="pl-k">return</span> <span class="pl-c1">User</span><span class="pl-k">::</span>filter(<span class="pl-smi">$request</span><span class="pl-k">-&gt;</span>all(), <span class="pl-smi">$userFilter</span>)<span class="pl-k">-&gt;</span>get();</span>
-<span class="pl-s1">    }</span>
-<span class="pl-s1">}</span>
-<span class="pl-s1"></span></pre></div>
-
-<h4>
-<a id="additional-filter-methods" class="anchor" href="#additional-filter-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional Filter Methods</h4>
-
-<p>The <code>Filterable</code> trait also comes with the below query builder helper methods:</p>
-
-<table>
-<thead>
-<tr>
-<th>EloquentFilter Method</th>
-<th>QueryBuilder Equivalent</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>$this-&gt;whereLike($column, $string)</code></td>
-<td><code>$query-&gt;where($column, 'LIKE', '%'.$string.'%')</code></td>
-</tr>
-<tr>
-<td><code>$this-&gt;whereBeginsWith($column, $string)</code></td>
-<td><code>$query-&gt;where($column, 'LIKE', $string.'%')</code></td>
-</tr>
-<tr>
-<td><code>$this-&gt;whereEndsWith($column, $string)</code></td>
-<td><code>$query-&gt;where($column, 'LIKE', '%'.$string)</code></td>
-</tr>
-</tbody>
-</table>
-
-<p>Since these methods are part of the <code>Filterable</code> trait they are accessible from any model that implements the trait without the need to call in the Model's EloquentFilter.</p>
 
 <h1>
 <a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h1>

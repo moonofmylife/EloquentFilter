@@ -242,6 +242,9 @@ To define methods for the following input:
 You would use the following methods:
 
 ```php
+<?php
+
+namespace App\ModelFilters;
 
 use EloquentFilter\ModelFilter;
 
@@ -323,6 +326,12 @@ class User extends Model
 This gives you access to the `filter()` method that accepts an array of input:
 
 ```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
 class UserController extends Controller
 {
     public function index(Request $request)
@@ -340,6 +349,12 @@ For both examples we will use the following models:
 A `App\User` that `hasMany` `App\Client::class`:
 
 ```php
+<?php
+
+namespace App;
+
+use EloquentFilter\Filterable;
+
 class User extends Model
 {
     use Filterable;
@@ -354,6 +369,12 @@ class User extends Model
 And each `App\Client` belongs to `App\Industry::class`:
 
 ```php
+<?php
+
+namespace App;
+
+use EloquentFilter\Filterable;
+
 class Client extends Model
 {
     use Filterable;
@@ -387,6 +408,10 @@ $input = [
 Both methods will invoke a setup query on the relationship that will be called EVERY time this relationship is queried.  The setup methods signature is `{$related}Setup()` and is injected with an instance of that relations query builder.  For this example let's say when querying users by their clients I only ever want to show agents that have clients with revenue. Without choosing wich method to put it in (because sometimes we may not have all the input and miss the scope all together if we choose the wrong one) and to avoid query duplication by placing that constraint on ALL methods for that relation we call the related setup method in the `UserFilter` like:
 
 ```php
+<?php
+
+namespace App\ModelFilters;
+
 class UserFilter extends ModelFilter
 {
     public function clientsSetup($query)
@@ -416,6 +441,10 @@ The `related()` method is a little easier to setup and is great if you aren't go
 `UserFilter` with an `industry()` method that uses the `ModelFilter`'s `related()` method
 
 ```php
+<?php
+
+namespace App\ModelFilters;
+
 class UserFilter extends ModelFilter
 {
     public function industry($id)
@@ -454,6 +483,10 @@ This is helpful when querying multiple columns on a relation's table while avoid
 `UserFilter` with the relation defined so it's able to be queried.
 
 ```php
+<?php 
+
+namespace App\ModelFilters;
+
 class UserFilter extends ModelFilter
 {
     public $relations = [
@@ -466,6 +499,10 @@ class UserFilter extends ModelFilter
 > **Note:** The `$relations` array should identify the relation and the input key to filter by that relation. Just as the `ModelFilter` works, this will access the camelCased method on that relation's filter. If the above example was using the key `industry_type` for the input the relations array would be `$relations = ['clients' => ['industry_type']]` and the `ClientFilter` would have the method `industryType()`.
 
 ```php
+<?php
+
+namespace App\ModelFilters;
+
 class ClientFilter extends ModelFilter
 {
     public $relations = [];
@@ -500,7 +537,9 @@ If the following array is passed to the `filter()` method:
 In `app/ModelFilters/UserFilter.php`:
 
 ```php
-<?php namespace App\ModelFilters;
+<?php
+
+namespace App\ModelFilters;
 
 use EloquentFilter\ModelFilter;
 
@@ -582,6 +621,12 @@ If you want to paginate your query and keep the url query string without having 
 The `paginateFilter()` and `simplePaginateFilter()` methods accept the same input as [Laravel's paginator](https://laravel.com/docs/master/pagination#basic-usage) and returns the respective paginator.
 
 ```php
+<?php 
+
+namespace App\Http\Controllers;
+
+use App\User;
+
 class UserController extends Controller
 {
     public function index(Request $request)

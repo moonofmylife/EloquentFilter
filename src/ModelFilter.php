@@ -4,6 +4,7 @@ namespace EloquentFilter;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
+use Illuminate\Support\Arr;
 
 /**
  * @mixin QueryBuilder
@@ -288,7 +289,7 @@ abstract class ModelFilter
 
     public function callRelatedLocalSetup($related, $query)
     {
-        if (method_exists($this, $method = camel_case($related).'Setup')) {
+        if (method_exists($this, $method = $this->convertToCamelCase($related).'Setup')) {
             $this->{$method}($query);
         }
     }
@@ -417,7 +418,7 @@ abstract class ModelFilter
      */
     public function getRelatedFilterInput($related)
     {
-        return array_key_exists($related, $this->relations) ? array_only($this->input, $this->relations[$related]) : [];
+        return array_key_exists($related, $this->relations) ? Arr::only($this->input, $this->relations[$related]) : [];
     }
 
     /**

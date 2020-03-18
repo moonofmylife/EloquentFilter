@@ -6,6 +6,7 @@
 [![License](https://poser.pugx.org/tucker-eric/eloquentfilter/license)](https://packagist.org/packages/tucker-eric/eloquentfilter)
 [![StyleCI](https://styleci.io/repos/53163405/shield)](https://styleci.io/repos/53163405/)
 [![Build Status](https://travis-ci.org/Tucker-Eric/EloquentFilter.svg?branch=master)](https://travis-ci.org/Tucker-Eric/EloquentFilter)
+[![PHPUnit Status](https://github.com/Tucker-Eric/EloquentFilter/workflows/PHPUnit/badge.svg?branch=master)](https://github.com/Tucker-Eric/EloquentFilter/actions?query=branch%3Amaster)
 
 An Eloquent way to filter Eloquent Models and their relationships
 
@@ -18,11 +19,11 @@ Lets say we want to return a list of users filtered by multiple parameters. When
 
 ```php
 [
-    'name'       => 'er',
-    'last_name'  => '',
+    'name'              => 'er',
+    'last_name'   => '',
     'company_id' => '2',
-    'roles'      => ['1','4','7'],
-    'industry'   => '5'
+    'roles'            => ['1','4','7'],
+    'industry'      => '5'
 ]
 ```
 
@@ -105,7 +106,7 @@ There are a few ways to define the filter a model will use:
 
 - [Use EloquentFilter's Default Settings](#default-settings)
 - [Use A Custom Namespace For All Filters](#with-configuration-file-optional)
-- [Define A Model's Default Filter](#define-the-default-model-filter)
+- [Define A Model's Default Filter](#define-the-default-model-filter-optional)
 - [Dynamically Select A Model's Filter](#dynamic-filters)
 
 
@@ -166,7 +167,9 @@ In `bootstrap/app.php`:
 config(['eloquentfilter.namespace' => "App\\Models\\ModelFilters\\"]);
 ```
 
-#### Define The Default Model Filter
+#### Define The Default Model Filter (optional)
+
+> The following is optional. If no `modelFilter` method is found on the model the model's filter class will be resolved by the [default naming conventions](#default-settings)
 
 Create a public method `modelFilter()` that returns `$this->provideFilter(Your\Model\Filter::class);` in your model.
 
@@ -184,7 +187,7 @@ class User extends Model
 
     public function modelFilter()
     {
-        return $this->provideFilter(App\ModelFilters\CustomFilters\CustomUserFilter::class);
+        return $this->provideFilter(\App\ModelFilters\CustomFilters\CustomUserFilter::class);
     }
 
     //User Class
@@ -242,20 +245,21 @@ This would create `app/ModelFilters/AdminFilters/UserFilter.php`
 ### Defining The Filter Logic
 Define the filter logic based on the camel cased input key passed to the `filter()` method.
 
-- Empty strings are ignored
-- `setup()` will be called regardless of input
-- `_id` is dropped from the end of the input to define the method so filtering `user_id` would use the `user()` method
+- Empty strings and null values are ignored
+- If a `setup()` method is defined it will be called once before any filter methods regardless of input
+- `_id` is dropped from the end of the input key to define the method so filtering `user_id` would use the `user()` method
+    - (can be changed with by definining `protected $drop_id = false;` on a filter)
 - Input without a corresponding filter method are ignored
 - The value of the key is injected into the method
 - All values are accessible through the `$this->input()` method or a single value by key `$this->input($key)`
-- All Eloquent Builder methods are accessible in `this` context in the model filter class.
+- All Eloquent Builder methods are accessible in `$this` context in the model filter class.
 
 To define methods for the following input:
 
 ```php
 [
-    'company_id'   => 5,
-    'name'         => 'Tuck',
+    'company_id'     => 5,
+    'name'                  => 'Tuck',
     'mobile_phone' => '888555'
 ]
 ```
@@ -268,6 +272,8 @@ use EloquentFilter\ModelFilter;
 
 class UserFilter extends ModelFilter
 {
+    protected $blacklist = ['secretMethod'];
+    
     // This will filter 'company_id' OR 'company'
     public function company($id)
     {
@@ -300,12 +306,38 @@ class UserFilter extends ModelFilter
             $this->withTrashed();
         }
     }
+    
+    public function secretMethod($secretParameter)
+    {
+        return $this->where('some_column', true);
+    }
 }
 ```
 
 > **Note:**  In the above example if you do not want `_id` dropped from the end of the input you can set `protected $drop_id = false` on your filter class.  Doing this would allow you to have a `company()` filter method as well as a `companyId()` filter method.
 
+
+> **Note:**  In the above example if you do not want `mobile_phone` to be mapped to `mobilePhone()` you can set `protected $camel_cased_methods = false` on your filter class. Doing this would allow you to have a `mobile_phone()` filter method instead of `mobilePhone()`. By default, `mobilePhone()` filter method can be called thanks to one of the following input key: `mobile_phone`, `mobilePhone`, `mobile_phone_id`
+
 > **Note:** In the example above all methods inside `setup()` will be called every time `filter()` is called on the model
+
+#### Blacklist
+
+Any methods defined in the `blackist` array will not be called by the filter. Those methods are normally used for internal filter logic.
+
+The `blacklistMethod()` and `whitelistMethod()` methods can be used to dynamically blacklist and whitelist methods.
+
+In the example above `secretMethod()` will not be called, even if there is a `secret_method` key in the input array. In order to call this method it would need to be whitelisted dynamically:
+
+Example:
+```php
+public function setup()
+{
+    if(Auth::user()->isAdmin()) {
+        $this->whitelistMethod('secretMethod');
+    }
+}
+```
 
 
 #### Additional Filter Methods
@@ -398,7 +430,7 @@ Input used to filter:
 
 ```php
 $input = [
-    'industry'         => '5',
+    'industry'                  => '5',
     'potential_volume' => '10000'
 ];
 ```
@@ -416,7 +448,7 @@ class UserFilter extends ModelFilter
     }
 }
 ```
-This prepend all queries with the `hasRevenue()` whenever the `UserFilter` runs any constriants on the `clients()` relationship.  If there are no queries to the `clients()` relationship then this method will not be invoked.
+This will prepend the query to the `clients()` relation with `hasRevenue()` whenever the `UserFilter` runs any constriants on the `clients()` relationship. If there are no queries to the `clients()` relationship then this method will not be invoked.
 
 > You can learn more about scopes [here](https://laravel.com/docs/master/eloquent#local-scopes)
 
@@ -502,6 +534,39 @@ class ClientFilter extends ModelFilter
     }
 }
 ```
+##### `$relations` array alias support
+The `$relations` array supports aliases. This is used when the input doesn't match the related model's filter method.
+This will transform the input keys being passed to the related model filter's input.
+
+##### Example:
+```php
+class UserFilter extends ModelFilter
+{
+    public $relations = [
+        'clients' => [
+            'client_industry'   => 'industry',
+            'client_potential' => 'potential_volume'
+        ]
+    ];
+}
+```
+
+The above will receive an array like:
+```php
+[
+    'client_industry'   => 1,
+    'client_potential' => 100000
+]
+```
+And the `ClientFilter` will receive it as:
+```php
+[
+    'industry'                   => 1,
+    'potential_volume' => 100000
+]
+```
+Allowing for more descriptive input names without filters needing to match. Allowing for more reuse of the same filters.
+
 #### Filter Related Models With Both Methods
 You can even use both together and it will produce the same result and only query the related model once.  An example would be:
 
@@ -509,11 +574,11 @@ If the following array is passed to the `filter()` method:
 
 ```php
 [
-    'name'             => 'er',
-    'last_name'        => ''
-    'company_id'       => 2,
-    'roles'            => [1,4,7],
-    'industry'         => 5,
+    'name'                           => 'er',
+    'last_name'                => ''
+    'company_id'              => 2,
+    'roles'                         => [1,4,7],
+    'industry'                  => 5,
     'potential_volume' => '10000'
 ]
 ```
@@ -589,7 +654,7 @@ public function statusType($type)
 }
 ```
 
-The above example will pass `'all'` to the `stats()` method on the `clients` relation of the model.
+The above example will pass `'all'` to the `status()` method on the `clients` relation of the model.
 > Calling the `push()` method in the `setup()` method will allow you to push values to the input for filter it's called on
 
 #### Pagination

@@ -511,7 +511,7 @@ abstract class ModelFilter
             return $this->input;
         }
 
-        return array_key_exists($key, $this->input) ? $this->input[$key] : $default;
+        return data_get($this->input, $key, $default);
     }
 
     /**

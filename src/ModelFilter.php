@@ -209,14 +209,26 @@ abstract class ModelFilter
      */
     public function filterInput()
     {
-        foreach ($this->input as $key => $val) {
-            // Call all local methods on filter
-            $method = $this->getFilterMethod($key);
+        $findMethod = function ($inputs, $beforeMethods = '') use (&$findMethod) {
+            foreach ($inputs as $key => $val) {
+                $method = $this->getFilterMethod($key);
 
-            if ($this->methodIsCallable($method)) {
-                $this->{$method}($val);
+                if ($beforeMethods) {
+                    $method = Str::camel($beforeMethods . Str::title($method));
+                }
+
+                if (is_array($val)) {
+                    $findMethod($val, $method);
+                    continue;
+                }
+
+                if ($this->methodIsCallable($method)) {
+                    $this->{$method}($val);
+                }
             }
-        }
+        };
+
+        $findMethod($this->input);
     }
 
     /**
